@@ -1,0 +1,15 @@
+sudo: required
+
+services:
+  - docker
+
+script:
+  - docker build -t zhaoqin/docker-shadowsocks .
+  - docker network create --subnet=172.20.0.0/16 mynet 
+  - docker run -d --name shadowsocks --net mynet --ip 172.20.0.2 -p 1234:1234 zhaoqin/docker-shadowsocks -s 0.0.0.0 -p 1234 -k abcd -m aes-256-cfb
+
+after_success:
+  - if [[ $TRAVIS_BRANCH == "master" ]] && [[ $TRAVIS_EVENT_TYPE == "push" ]] ; then UPLOAD=1 ; else UPLOAD=0 ; fi
+  - if [ $UPLOAD -eq 1 ] ; then echo "Upload zhaoqin/docker-shadowsocks image" ; fi
+  - if [ $UPLOAD -eq 1 ] ; then docker login -u zhaoqin -p $docker_hub_password ; fi
+  - if [ $UPLOAD -eq 1 ] ; then docker push zhaoqin/docker-shadowsocks ; fi
